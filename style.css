@@ -1093,4 +1093,42 @@ nav {
     line-height: 25px;
     transition: width 0.5s ease-in-out;
   }
+.cert-box {
+  position: relative;
+  width: 90%;          /* max width relative to viewport */
+  max-width: 700px;    /* keeps it reasonable on desktop */
+  aspect-ratio: 4 / 3; /* maintain landscape ratio */
+  background: linear-gradient(135deg, #d1c47b 0%, #119711 100%);
+  border-radius: 25px;
+  box-shadow: 0 12px 32px rgba(0,0,0,0.25);
+  padding: 5% 6%;      /* padding relative to box size */
+  box-sizing: border-box;
+  font-family: 'Georgia', serif;
+  color: #3a2f0d;
+  display: flex;
+  flex-direction: row;
+  justify-content: space-between;
+  align-items: center;
+  overflow: hidden;
+}
+
+/* Adjust left/right sections for smaller screens */
+@media (max-width: 600px) {
+  .cert-box {
+    flex-direction: column;
+    padding: 5%;
+  }
+  .cert-left, .cert-right {
+    max-width: 100%;
+    margin-top: 12px;
+    text-align: center;
+  }
+  .cert-star {
+    top: auto;
+    left: 50%;
+    transform: translateX(-50%);
+    margin-top: 10px;
+  }
+}
+
   
