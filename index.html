@@ -544,73 +544,48 @@ function openRecycle() {
   let sortedCount = 0;
   let activeDrag = null;
 
-  // 🖱 Mouse drag
+  // Desktop drag & drop
   draggables.forEach(drag => {
-    drag.addEventListener('dragstart', e => {
-      e.dataTransfer.setData('type', drag.dataset.type);
-      activeDrag = drag;
-    });
-    drag.addEventListener('dragend', () => (activeDrag = null));
+    drag.addEventListener('dragstart', e => activeDrag = drag);
+    drag.addEventListener('dragend', () => activeDrag = null);
   });
 
-  // 🖐 Touch drag (mobile)
-  draggables.forEach(drag => {
-    drag.addEventListener('touchstart', e => {
-      activeDrag = drag;
-    });
-    drag.addEventListener('touchmove', e => {
-      e.preventDefault();
-      const touch = e.touches[0];
-      const el = document.elementFromPoint(touch.clientX, touch.clientY);
-      bins.forEach(bin => {
-        bin.style.background = el === bin ? '#e0f7fa' : '';
-      });
-    });
-    drag.addEventListener('touchend', e => {
-      const touch = e.changedTouches[0];
-      const dropTarget = document.elementFromPoint(touch.clientX, touch.clientY);
-      if (dropTarget && dropTarget.classList.contains('bin')) {
-        handleDrop(activeDrag, dropTarget);
-      }
-      bins.forEach(bin => (bin.style.background = ''));
-      activeDrag = null;
-    });
-  });
-
-  // 🧺 Desktop drop
   bins.forEach(bin => {
     bin.addEventListener('dragover', e => e.preventDefault());
     bin.addEventListener('drop', e => {
       e.preventDefault();
-      const type = e.dataTransfer.getData('type');
-      const draggedItem = document.querySelector(`[data-type="${type}"]`);
-      handleDrop(draggedItem, bin);
+      handleDrop(activeDrag, bin);
     });
   });
 
-   function handleDrop(item, bin) {
+  function handleDrop(item, bin) {
+    if (!item) return;
     if (item.dataset.type === bin.dataset.accept) {
       bin.appendChild(item);
       item.style.cursor = 'default';
       item.draggable = false;
       sortedCount++;
       msg.textContent = `Sorted: ${sortedCount} / 3`;
+
+      // Enable Finish button when all sorted
       if (sortedCount === 3) finishBtn.disabled = false;
     } else {
       alert('Wrong bin! Try again.');
     }
   }
 
-  // 🎯 Finish button now works
-  finishBtn.addEventListener('click', () => {
+  finishBtn.onclick = () => {
     if (sortedCount === 3) {
-      openCertificate(); // 👈 Call your certificate function here
+      gameOverlay.style.display = 'none';
+      showCertificate(activeGame, player.name, 'All items correctly sorted!');
     } else {
       alert('Please sort all items first!');
     }
-  });
+  };
 
-  document.getElementById('recycleBack').onclick = () => location.reload();
+  document.getElementById('recycleBack').onclick = () => {
+    gameOverlay.style.display = 'none';
+  };
 }
 
 /* ---------- RUNNER ---------- */
@@ -771,10 +746,7 @@ fetch('poll.html')
     }, 100);
   });
 </script>
-  </script>
 </body>
 
 </html>
-
-
 
