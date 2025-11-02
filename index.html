@@ -588,7 +588,7 @@ function openRecycle() {
     });
   });
 
-  function handleDrop(item, bin) {
+   function handleDrop(item, bin) {
     if (item.dataset.type === bin.dataset.accept) {
       bin.appendChild(item);
       item.style.cursor = 'default';
@@ -600,6 +600,15 @@ function openRecycle() {
       alert('Wrong bin! Try again.');
     }
   }
+
+  // 🎯 Finish button now works
+  finishBtn.addEventListener('click', () => {
+    if (sortedCount === 3) {
+      openCertificate(); // 👈 Call your certificate function here
+    } else {
+      alert('Please sort all items first!');
+    }
+  });
 
   document.getElementById('recycleBack').onclick = () => location.reload();
 }
@@ -766,5 +775,6 @@ fetch('poll.html')
 </body>
 
 </html>
+
 
 
