@@ -544,7 +544,7 @@ function openRecycle() {
   let sortedCount = 0;
   let activeDrag = null;
 
-  // Desktop drag & drop
+  // ---------- Desktop drag & drop ----------
   draggables.forEach(drag => {
     drag.addEventListener('dragstart', e => activeDrag = drag);
     drag.addEventListener('dragend', () => activeDrag = null);
@@ -558,22 +558,46 @@ function openRecycle() {
     });
   });
 
+  // ---------- Touch support ----------
+  draggables.forEach(drag => {
+    drag.addEventListener('touchstart', e => {
+      activeDrag = drag;
+    });
+
+    drag.addEventListener('touchmove', e => {
+      e.preventDefault();
+      const touch = e.touches[0];
+      const el = document.elementFromPoint(touch.clientX, touch.clientY);
+      bins.forEach(bin => bin.style.background = el === bin ? '#e0f7fa' : '');
+    });
+
+    drag.addEventListener('touchend', e => {
+      const touch = e.changedTouches[0];
+      const dropTarget = document.elementFromPoint(touch.clientX, touch.clientY);
+      if (dropTarget && dropTarget.classList.contains('bin')) {
+        handleDrop(activeDrag, dropTarget);
+      }
+      bins.forEach(bin => bin.style.background = '');
+      activeDrag = null;
+    });
+  });
+
+  // ---------- Drop handler ----------
   function handleDrop(item, bin) {
     if (!item) return;
     if (item.dataset.type === bin.dataset.accept) {
       bin.appendChild(item);
-      item.style.cursor = 'default';
       item.draggable = false;
+      item.style.cursor = 'default';
       sortedCount++;
       msg.textContent = `Sorted: ${sortedCount} / 3`;
-
-      // Enable Finish button when all sorted
       if (sortedCount === 3) finishBtn.disabled = false;
     } else {
       alert('Wrong bin! Try again.');
     }
   }
 
+  // ---------- Finish button ----------
   finishBtn.onclick = () => {
     if (sortedCount === 3) {
       gameOverlay.style.display = 'none';
@@ -587,6 +611,7 @@ function openRecycle() {
     gameOverlay.style.display = 'none';
   };
 }
+
 
 /* ---------- RUNNER ---------- */
 function openRunner(){
@@ -749,4 +774,5 @@ fetch('poll.html')
 </body>
 
 </html>
+
 
