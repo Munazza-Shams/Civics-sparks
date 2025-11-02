@@ -513,21 +513,20 @@ function renderQuizQuestion(){
 }
 
 /* ---------- RECYCLE (drag & drop) ---------- */
-function openRecycle(){
-  // build content with draggable items and bins
+function openRecycle() {
   gameCard.innerHTML = `
     <h2>♻️ Waste Sort Challenge</h2>
     <p class="muted">Drag each item into the correct bin. Sort all to finish.</p>
     <div style="display:flex;gap:24px;justify-content:center;align-items:flex-start;margin-top:18px">
       <div id="items" style="display:flex;flex-direction:column;gap:10px">
-        <div draggable="true" class="dr-item" data-type="plastic" style="padding:8px;background:#fff;border-radius:8px;cursor:grab;border:1px solid #ccc">Plastic Bottle</div>
-        <div draggable="true" class="dr-item" data-type="paper" style="padding:8px;background:#fff;border-radius:8px;cursor:grab;border:1px solid #ccc">Newspaper</div>
-        <div draggable="true" class="dr-item" data-type="organic" style="padding:8px;background:#fff;border-radius:8px;cursor:grab;border:1px solid #ccc">Banana Peel</div>
+        <div draggable="true" class="dr-item draggable" data-type="plastic" style="padding:8px;background:#fff;border-radius:8px;cursor:grab;border:1px solid #ccc">Plastic Bottle</div>
+        <div draggable="true" class="dr-item draggable" data-type="paper" style="padding:8px;background:#fff;border-radius:8px;cursor:grab;border:1px solid #ccc">Newspaper</div>
+        <div draggable="true" class="dr-item draggable" data-type="organic" style="padding:8px;background:#fff;border-radius:8px;cursor:grab;border:1px solid #ccc">Banana Peel</div>
       </div>
       <div style="display:flex;flex-direction:column;gap:12px">
-        <div id="bin-plastic" class="bin" data-accept="plastic" style="border:2px dashed #1565c0">Plastic Bin</div>
-        <div id="bin-paper" class="bin" data-accept="paper" style="border:2px dashed #4caf50">Paper Bin</div>
-        <div id="bin-organic" class="bin" data-accept="organic" style="border:2px dashed #8bc34a">Organic Bin</div>
+        <div id="bin-plastic" class="bin" data-accept="plastic" style="border:2px dashed #1565c0;padding:20px">Plastic Bin</div>
+        <div id="bin-paper" class="bin" data-accept="paper" style="border:2px dashed #4caf50;padding:20px">Paper Bin</div>
+        <div id="bin-organic" class="bin" data-accept="organic" style="border:2px dashed #8bc34a;padding:20px">Organic Bin</div>
       </div>
     </div>
     <p id="recycleMsg" class="muted" style="margin-top:14px">Sorted: 0 / 3</p>
@@ -537,41 +536,72 @@ function openRecycle(){
     </div>
   `;
 
-  const drItems = Array.from(gameCard.querySelectorAll('.dr-item'));
-  let sorted = 0;
-  drItems.forEach(item=>{
-    item.addEventListener('dragstart', e=> e.dataTransfer.setData('text', item.dataset.type));
+  const draggables = document.querySelectorAll('.draggable');
+  const bins = document.querySelectorAll('.bin');
+  const msg = document.getElementById('recycleMsg');
+  const finishBtn = document.getElementById('recycleFinish');
+
+  let sortedCount = 0;
+  let activeDrag = null;
+
+  // 🖱 Mouse drag
+  draggables.forEach(drag => {
+    drag.addEventListener('dragstart', e => {
+      e.dataTransfer.setData('type', drag.dataset.type);
+      activeDrag = drag;
+    });
+    drag.addEventListener('dragend', () => (activeDrag = null));
   });
 
-  const bins = Array.from(gameCard.querySelectorAll('.bin'));
-  bins.forEach(bin=>{
-    bin.addEventListener('dragover', e=> e.preventDefault());
-    bin.addEventListener('drop', e=>{
-      const type = e.dataTransfer.getData('text');
-      const acc = bin.dataset.accept;
-      if(type === acc){
-        // find the draggable element that is not yet removed
-        const list = gameCard.querySelectorAll(`.dr-item[data-type="${type}"]`);
-        if(list.length === 0) return;
-        // remove first occurrence
-        list[0].remove();
-        sorted++;
-        gameCard.querySelector('#recycleMsg').textContent = `Sorted: ${sorted} / 3`;
-        if(sorted === 3) gameCard.querySelector('#recycleFinish').disabled = false;
-      } else {
-        // wrong
-        const el = gameCard.querySelector('#recycleMsg');
-        el.textContent = 'Wrong bin — try again.';
-        setTimeout(()=> el.textContent = `Sorted: ${sorted} / 3`, 1200);
+  // 🖐 Touch drag (mobile)
+  draggables.forEach(drag => {
+    drag.addEventListener('touchstart', e => {
+      activeDrag = drag;
+    });
+    drag.addEventListener('touchmove', e => {
+      e.preventDefault();
+      const touch = e.touches[0];
+      const el = document.elementFromPoint(touch.clientX, touch.clientY);
+      bins.forEach(bin => {
+        bin.style.background = el === bin ? '#e0f7fa' : '';
+      });
+    });
+    drag.addEventListener('touchend', e => {
+      const touch = e.changedTouches[0];
+      const dropTarget = document.elementFromPoint(touch.clientX, touch.clientY);
+      if (dropTarget && dropTarget.classList.contains('bin')) {
+        handleDrop(activeDrag, dropTarget);
       }
+      bins.forEach(bin => (bin.style.background = ''));
+      activeDrag = null;
     });
   });
 
-  gameCard.querySelector('#recycleBack').onclick = ()=> gameOverlay.style.display = 'none';
-  gameCard.querySelector('#recycleFinish').onclick = ()=>{
-    gameOverlay.style.display = 'none';
-    showCertificate(activeGame, player.name, `All items sorted correctly.`);
-  };
+  // 🧺 Desktop drop
+  bins.forEach(bin => {
+    bin.addEventListener('dragover', e => e.preventDefault());
+    bin.addEventListener('drop', e => {
+      e.preventDefault();
+      const type = e.dataTransfer.getData('type');
+      const draggedItem = document.querySelector(`[data-type="${type}"]`);
+      handleDrop(draggedItem, bin);
+    });
+  });
+
+  function handleDrop(item, bin) {
+    if (item.dataset.type === bin.dataset.accept) {
+      bin.appendChild(item);
+      item.style.cursor = 'default';
+      item.draggable = false;
+      sortedCount++;
+      msg.textContent = `Sorted: ${sortedCount} / 3`;
+      if (sortedCount === 3) finishBtn.disabled = false;
+    } else {
+      alert('Wrong bin! Try again.');
+    }
+  }
+
+  document.getElementById('recycleBack').onclick = () => location.reload();
 }
 
 /* ---------- RUNNER ---------- */
@@ -736,4 +766,5 @@ fetch('poll.html')
 </body>
 
 </html>
+
 
