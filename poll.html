@@ -1,0 +1,357 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <link rel="stylesheet" href="./style.css">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css" crossorigin="anonymous" />
+  <title>Civics Sparks — Clean & Green Campus</title>
+
+  <!-- PDF generation libraries (CDN) -->
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/9.22.2/firebase-app-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/9.22.2/firebase-storage-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/9.22.2/firebase-firestore-compat.js"></script>
+
+  <style>
+    body{
+         background: #f0f4ec;
+    }
+   
+    .card {
+      background: white;
+      margin: 30px auto;
+      max-width: 900px;
+      height:fit-content;
+      border-radius: 16px;
+      padding: 20px;
+      box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+    }
+
+    footer {
+      text-align: center;
+      padding: 20px;
+      background: #2e7d32;
+      color: white;
+      margin-top: 40px;
+    }
+
+    .social-links a {
+      color: white;
+      margin: 0 10px;
+      font-size: 20px;
+    }
+
+    .member img {
+      width: 130px;
+      height: 130px;
+      border-radius: 50%;
+      object-fit: cover;
+    }
+
+    .members {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 20px;
+      justify-content: center;
+    }
+
+    #certForm input {
+      padding: 10px;
+      margin: 5px;
+      border-radius: 8px;
+      border: 1px solid #ccc;
+      width: 250px;
+    }
+
+    #certForm button {
+      background: #2e7d32;
+      color: white;
+      padding: 10px 20px;
+      border: none;
+      border-radius: 8px;
+      cursor: pointer;
+    }
+
+    /* Poll specific styling */
+    .poll-result {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+
+    .poll-bar {
+      flex: 1;
+      height: 22px;
+      border-radius: 12px;
+      overflow: hidden;
+      position: relative;
+      background: #c8e6c9;
+    }
+
+    .progress-bar {
+      height: 100%;
+      width: 0%;
+      background: #2e7d32;
+      transition: width 0.5s ease;
+    }
+
+    .poll-text {
+      min-width: 80px;
+      font-weight: 600;
+    }
+
+    .poll-btn {
+      background: #4caf50;
+      color: #fff;
+      border: 0;
+      padding: 10px 16px;
+      border-radius: 12px;
+      cursor: pointer;
+      transition: transform 0.2s;
+    }
+
+    .poll-btn:hover {
+      transform: scale(1.05);
+    }
+    /* Make poll results container flexible and responsive */
+#pollResults {
+  margin-top: 24px;
+  max-width: 600px;
+  margin-left: auto;
+  margin-right: auto;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  width: 100%;
+}
+
+/* Ensure poll bars take full width on small screens */
+.poll-bar {
+  flex: 1;
+  min-width: 0; /* prevents overflow */
+  height: 22px;
+  border-radius: 12px;
+  overflow: hidden;
+  position: relative;
+  background: #c8e6c9;
+}
+
+/* Poll text below bar on very small screens */
+@media (max-width: 500px) {
+  .poll-result {
+    flex-direction: column;
+    align-items: flex-start;
+  }
+  .poll-text {
+    margin-top: 4px;
+  }
+}
+#pollOptions {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: 12px;
+}
+
+@media (max-width: 500px) {
+  .poll-btn {
+    flex: 1 1 45%; /* buttons take ~half width each */
+  }
+}
+.poll-section .poll-option {
+    display: flex;
+    flex-direction: column; /* ensures bars stack properly on small screens */
+}
+
+.poll-section .poll-bar {
+    width: 100% !important; /* make sure it fills container on small screens */
+    max-width: 100%; /* override any previous max-width */
+    height: 20px; /* adjust height as needed */
+    display: block !important; /* ensure it's not hidden */
+}
+.poll-section {
+    background-color: #f5f5f5; /* match your main website background */
+    padding: 20px; /* optional, just for spacing */
+}
+@media screen and (max-width: 600px) {
+    .poll-section .poll-bar {
+        height: 15px; /* slightly smaller on mobile */
+    }
+    .poll-section {
+        padding: 15px;
+    }
+}
+/* Ensure poll bars are visible and take full width */
+.poll-result {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    flex-wrap: wrap; /* allow wrapping on very small screens */
+}
+
+.poll-bar {
+    flex: 1 1 200px; /* grow, shrink, minimum width */
+    min-width: 150px; /* ensures bar is not collapsed on mobile */
+    height: 22px;
+    border-radius: 12px;
+    overflow: hidden;
+    background: #c8e6c9;
+    display: block;
+}
+
+.progress-bar {
+    height: 100%;
+    width: 0%;
+    background: #2e7d32;
+    transition: width 0.5s ease;
+}
+
+/* Poll text next to bar or below on very small screens */
+@media (max-width: 500px) {
+    .poll-result {
+        flex-direction: column; /* text below bar */
+        align-items: stretch; /* bar takes full width */
+    }
+    .poll-bar {
+        width: 100% !important;
+        min-width: 0;
+    }
+    .poll-text {
+        margin-top: 6px;
+        text-align: left;
+    }
+}
+.poll-result {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    flex-wrap: wrap; /* allows small screens */
+}
+
+/* Poll bar styling */
+.poll-bar {
+    flex: 1;              /* bar grows to fill available space */
+    height: 20px;         /* keep it like a bar, not a box */
+    min-width: 100px;     /* prevents collapsing */
+    border-radius: 12px;
+    overflow: hidden;
+    background: #c8e6c9;
+    display: block;
+}
+
+.progress-bar {
+    height: 100%;
+    width: 0%;
+    background: #2e7d32;
+    transition: width 0.5s ease;
+}
+
+/* Mobile tweaks */
+@media (max-width: 500px) {
+    .poll-result {
+        flex-direction: row;       /* keep bar and text in a row */
+        align-items: center;
+    }
+    .poll-text {
+        min-width: 70px;
+        font-size: 14px;
+    }
+    .poll-bar {
+        height: 18px;              /* slightly smaller on mobile */
+        min-width: 0;
+    }
+}
+
+
+  </style>
+</head>
+
+<body>
+
+
+  <main>
+   <section id="poll" class="card">
+  <h2 align="center">🗳️ Which Area Needs Cleaning?</h2>
+  <p align="center" class="muted">Select an area and see what others think!</p>
+
+  <!-- Buttons in a row -->
+  <div id="pollOptions" style="display:flex;flex-wrap:wrap;justify-content:center;gap:12px;margin-top:18px;">
+    <button class="poll-btn" data-area="Classrooms">Classrooms</button>
+    <button class="poll-btn" data-area="Ground">Ground</button>
+    <button class="poll-btn" data-area="Cafeteria">Cafeteria</button>
+    <button class="poll-btn" data-area="Labs">Labs</button>
+    <button class="poll-btn" data-area="Library">Library</button>
+  </div>
+
+  <!-- Results -->
+  <div id="pollResults" style="margin-top:24px;max-width:600px;margin-left:auto;margin-right:auto;display:flex;flex-direction:column;gap:12px;">
+    <div class="poll-result" data-area="Classrooms">
+      <div class="poll-bar">
+        <div class="progress-bar"></div>
+      </div>
+      <span class="poll-text">Classrooms — 0%</span>
+    </div>
+
+    <div class="poll-result" data-area="Ground">
+      <div class="poll-bar">
+        <div class="progress-bar" style="background:#388e3c;"></div>
+      </div>
+      <span class="poll-text">Ground — 0%</span>
+    </div>
+
+    <div class="poll-result" data-area="Cafeteria">
+      <div class="poll-bar">
+        <div class="progress-bar" style="background:#1b5e20;"></div>
+      </div>
+      <span class="poll-text">Cafeteria — 0%</span>
+    </div>
+
+    <div class="poll-result" data-area="Labs">
+      <div class="poll-bar">
+        <div class="progress-bar" style="background:#2e7d32;"></div>
+      </div>
+      <span class="poll-text">Labs — 0%</span>
+    </div>
+
+    <div class="poll-result" data-area="Library">
+      <div class="poll-bar">
+        <div class="progress-bar" style="background:#1b5e20;"></div>
+      </div>
+      <span class="poll-text">Library — 0%</span>
+    </div>
+  </div>
+</section>
+
+<script>
+  // Poll functionality
+  document.addEventListener('DOMContentLoaded', () => {
+    const pollCounts = { Classrooms: 0, Ground: 0, Cafeteria: 0, Labs: 0, Library: 0 };
+    const pollButtons = document.querySelectorAll('.poll-btn');
+    const pollResults = document.querySelectorAll('.poll-result');
+
+    pollButtons.forEach(btn => {
+      btn.addEventListener('click', () => {
+        const area = btn.dataset.area;
+        pollCounts[area]++;
+        updatePoll();
+      });
+    });
+
+    function updatePoll() {
+      const totalVotes = Object.values(pollCounts).reduce((a, b) => a + b, 0);
+      pollResults.forEach(res => {
+        const area = res.dataset.area;
+        const percent = totalVotes ? (pollCounts[area] / totalVotes * 100) : 0;
+        res.querySelector('.progress-bar').style.width = percent + '%';
+        res.querySelector('.poll-text').innerText = `${area} — ${Math.round(percent)}%`;
+      });
+    }
+  });
+</script>
+
+  <!-- All other scripts unchanged... -->
+</body>
+</html>
